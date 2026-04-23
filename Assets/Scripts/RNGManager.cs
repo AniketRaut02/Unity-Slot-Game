@@ -16,7 +16,7 @@ public class RNGManager : MonoBehaviour
     private void Start()
     {
         ///Use this function call to check Fairness of RNG Algorithm.
-        SimulateThousandSpins();
+        //SimulateThousandSpins();
     }
 
     /// <summary>
