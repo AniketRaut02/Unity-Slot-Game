@@ -12,6 +12,7 @@ public class GameManager : MonoBehaviour
     public static event Action<int> OnBalanceChanged;
     public static event Action<SymbolData[]> OnSpinStarted;
     public static event Action<int> OnWinProcessed;
+    public static event Action<int> OnBetChanged;
 
     // --- References & Variables ---
     [Header("Dependencies")]
@@ -104,5 +105,24 @@ public class GameManager : MonoBehaviour
         // After payout animations finish, reset to Idle. 
         // For now, we instantly reset.
         ChangeState(GameState.Idle);
+    }
+
+
+    /// <summary>
+    /// These functions are used to increase or decrease the bet.
+    /// </summary>
+    public void IncreaseBet()
+    {
+        if (CurrentState != GameState.Idle) return;
+        currentBet += 50; // Increase by 50 (or whatever you prefer)
+        OnBetChanged?.Invoke(currentBet);
+    }
+
+    public void DecreaseBet()
+    {
+        if (CurrentState != GameState.Idle) return;
+        if (currentBet <= 50) return; // Prevent betting 0 or negative
+        currentBet -= 50;
+        OnBetChanged?.Invoke(currentBet);
     }
 }
