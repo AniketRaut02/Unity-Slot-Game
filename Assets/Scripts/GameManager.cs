@@ -15,6 +15,7 @@ public class GameManager : MonoBehaviour
     public static event Action<int> OnBetChanged;
     public static event Action OnNotEnoughBalance;
     public static event Action OnBankrupt;
+    public static event Action<int> OnBetDeducted;
 
     // --- References & Variables ---
     [Header("Dependencies")]
@@ -56,6 +57,9 @@ public class GameManager : MonoBehaviour
         // Deduct bet and update UI
         currentBalance -= currentBet;
         OnBalanceChanged?.Invoke(currentBalance);
+
+        //trigger as soon as bet is deducted.
+        OnBetDeducted?.Invoke(currentBet);
 
         // Lock the game state
         ChangeState(GameState.Spinning);

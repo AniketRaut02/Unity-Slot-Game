@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using System;
+using System.Collections;
 
 public class UIManager : MonoBehaviour
 {
@@ -14,11 +15,30 @@ public class UIManager : MonoBehaviour
     [SerializeField] private Button spinButton;
     [SerializeField] private Button increaseBetButton;
     [SerializeField] private Button decreaseBetButton;
+    [SerializeField] private Button optionsButton;
+    [SerializeField] private Button statsButton;
+    [SerializeField] private Button instructionsButton;
 
     [Header("Popups")]
     [SerializeField] private GameObject lowCashPopup;
     [SerializeField] private GameObject bankruptPopup;
     [SerializeField] private GameObject optionsPopup;
+    [SerializeField] private GameObject statsPopup;
+    [SerializeField] private GameObject instructionsPopup;
+
+    [Header("Polish Elements")]
+    [SerializeField] private float balanceRollDuration = 1.0f;
+    [SerializeField] private GameObject floatingTextPrefab;
+    [SerializeField] private RectTransform floatingTextSpawnPoint;
+
+    [Header("Session Stats")]
+    [SerializeField] private TextMeshProUGUI totalWageredText;
+    [SerializeField] private TextMeshProUGUI totalWonText;
+    [SerializeField] private TextMeshProUGUI netProfitText;
+
+    private int currentDisplayedBalance;
+    private int trackedBetAmount;
+    private Coroutine balanceRollCoroutine;
 
 
     private void OnEnable()
@@ -30,6 +50,10 @@ public class UIManager : MonoBehaviour
         GameManager.OnWinProcessed += ShowWinMessage;
         GameManager.OnNotEnoughBalance += ShowLowCashPopup;
         GameManager.OnBankrupt += ShowBankruptPopup;
+        GameManager.OnSpinStarted += TriggerBetDeductionVisuals;
+
+        //Subscribe to Stats Manager
+        StatsManager.OnStatsUpdated += UpdateStatsUI;
     }
 
     private void OnDisable()
@@ -41,6 +65,10 @@ public class UIManager : MonoBehaviour
         GameManager.OnWinProcessed -= ShowWinMessage;
         GameManager.OnNotEnoughBalance -= ShowLowCashPopup;
         GameManager.OnBankrupt -= ShowBankruptPopup;
+        GameManager.OnSpinStarted -= TriggerBetDeductionVisuals;
+
+        //Unsubscribe to Stats Manager
+        StatsManager.OnStatsUpdated -= UpdateStatsUI;
     }
 
    
@@ -49,15 +77,20 @@ public class UIManager : MonoBehaviour
     {
         statusText.text = "PLACE YOUR BET";
         UpdateBetUI(100);
+        currentDisplayedBalance = 0;
     }
 
     private void UpdateBalanceUI(int newBalance)
     {
-        balanceText.text = $"BALANCE: {newBalance}";
+        // If we are already rolling, stop the old roll and start a new one to the new target
+        if (balanceRollCoroutine != null) StopCoroutine(balanceRollCoroutine);
+
+        balanceRollCoroutine = StartCoroutine(RollBalanceText(currentDisplayedBalance, newBalance));
     }
 
     private void UpdateBetUI(int newBet)
     {
+        trackedBetAmount = newBet;
         betText.text = $"BET: {newBet}";
     }
 
@@ -83,6 +116,7 @@ public class UIManager : MonoBehaviour
     private void ShowWinMessage(int payout)
     {
         statusText.text = $"BIG WIN! +{payout}";
+        SpawnFloatingText($"+{payout}", Color.green);
     }
 
     private void ShowLowCashPopup()
@@ -90,9 +124,7 @@ public class UIManager : MonoBehaviour
         if (lowCashPopup != null)
         {
             lowCashPopup.SetActive(true);
-            spinButton.interactable = false;
-            increaseBetButton.interactable = false;
-            decreaseBetButton.interactable = false;
+            SetAllButtonsUninteractive();
         }
 
     }
@@ -101,9 +133,7 @@ public class UIManager : MonoBehaviour
         if (lowCashPopup != null)
         {
             lowCashPopup.SetActive(false);
-            spinButton.interactable = true;
-            increaseBetButton.interactable = true;
-            decreaseBetButton.interactable = true;
+            SetAllButtonsInteractive();
 
             // Optional: Reset the status text
             if (statusText.text == "PLACE YOUR BET") return;
@@ -115,12 +145,17 @@ public class UIManager : MonoBehaviour
     {
         if (bankruptPopup != null)
         {
+            SetAllButtonsUninteractive();
+
             bankruptPopup.SetActive(true);
             statusText.text = "GAME OVER";
         }
     }
     public void RestartGame()
     {
+
+        SetAllButtonsInteractive();
+
         // For a quick restart, you can simply reload the active scene
         UnityEngine.SceneManagement.SceneManager.LoadScene(
             UnityEngine.SceneManagement.SceneManager.GetActiveScene().buildIndex);
@@ -130,6 +165,8 @@ public class UIManager : MonoBehaviour
     {
         if (optionsPopup != null)
         {
+            SetAllButtonsUninteractive();
+
             optionsPopup.SetActive(true);
         }
     }
@@ -138,9 +175,126 @@ public class UIManager : MonoBehaviour
     {
         if (optionsPopup != null)
         {
+            SetAllButtonsInteractive();
             optionsPopup.SetActive(false);
         }
     }
+
+
+    //Show and hide stats popup panel(attached to OnClick in inspector)
+    public void ShowStatsPopUp()
+    {
+        if (statsPopup != null)
+        {
+            SetAllButtonsUninteractive();
+            statsPopup.SetActive(true);
+        }
+    }
+
+    public void CloseStatsPopUp()
+    {
+        if (statsPopup != null)
+        {
+            SetAllButtonsInteractive();
+            statsPopup.SetActive(false);
+        }
+    }
+
+    //Show and hide Instructions popup Panel.
+    public void ShowInstructionsPopUp()
+    {
+        if (instructionsPopup != null)
+        {
+            SetAllButtonsUninteractive();
+            instructionsPopup.SetActive(true);
+        }
+    }
+
+    public void CloseInstructionsPopUp()
+    {
+        if (instructionsPopup != null)
+        {
+            SetAllButtonsInteractive();
+            instructionsPopup.SetActive(false);
+        }
+    }
+
+    private void TriggerBetDeductionVisuals(SymbolData[] results)
+    {
+        SpawnFloatingText($"-{trackedBetAmount}", Color.red);
+    }
+    private IEnumerator RollBalanceText(int startValue, int targetValue)
+    {
+        float elapsed = 0f;
+
+        while (elapsed < balanceRollDuration)
+        {
+            elapsed += Time.deltaTime;
+            float t = elapsed / balanceRollDuration;
+
+            // Add a simple Ease-Out mathematical curve so the numbers slow down naturally
+            float easeOutT = t * (2f - t);
+
+            currentDisplayedBalance = Mathf.RoundToInt(Mathf.Lerp(startValue, targetValue, easeOutT));
+            balanceText.text = $"BALANCE: {currentDisplayedBalance}";
+
+            yield return null;
+        }
+
+        // Hard lock at the end to ensure no math drift
+        currentDisplayedBalance = targetValue;
+        balanceText.text = $"BALANCE: {currentDisplayedBalance}";
+    }
+
+    private void SpawnFloatingText(string message, Color color)
+    {
+        if (floatingTextPrefab == null || floatingTextSpawnPoint == null) return;
+
+        // Instantiate the text at the spawn point inside the Canvas
+        GameObject popUp = Instantiate(floatingTextPrefab, floatingTextSpawnPoint.position, Quaternion.identity, floatingTextSpawnPoint);
+
+        // Setup the text and color
+        FloatingText ftScript = popUp.GetComponent<FloatingText>();
+        if (ftScript != null)
+        {
+            ftScript.Setup(message, color);
+        }
+    }
+
+    private void UpdateStatsUI(int wagered, int won, int net)
+    {
+        if (totalWageredText != null) totalWageredText.text = $"WAGERED: {wagered}";
+        if (totalWonText != null) totalWonText.text = $"WON: {won}";
+
+        if (netProfitText != null)
+        {
+            netProfitText.text = $"PROFIT: {net}";
+            // Optional Polish: Color code the profit
+            netProfitText.color = net >= 0 ? Color.green : Color.red;
+        }
+    }
+
+    private void SetAllButtonsUninteractive()
+    {
+        spinButton.interactable = false;
+        increaseBetButton.interactable = false;
+        decreaseBetButton.interactable = false;
+        instructionsButton.interactable = false;
+        optionsButton.interactable = false;
+        statsButton.interactable = false;
+
+    }
+
+    private void SetAllButtonsInteractive()
+    {
+        spinButton.interactable = true;
+        increaseBetButton.interactable = true;
+        decreaseBetButton.interactable = true;
+        instructionsButton.interactable = true;
+        optionsButton.interactable = true;
+        statsButton.interactable = true;
+    }
+
     /// <summary>
     /// Handles quitting the game gracefully across different platforms.
     /// </summary>
