@@ -13,6 +13,8 @@ public class GameManager : MonoBehaviour
     public static event Action<SymbolData[]> OnSpinStarted;
     public static event Action<int> OnWinProcessed;
     public static event Action<int> OnBetChanged;
+    public static event Action OnNotEnoughBalance;
+    public static event Action OnBankrupt;
 
     // --- References & Variables ---
     [Header("Dependencies")]
@@ -47,6 +49,7 @@ public class GameManager : MonoBehaviour
         if (currentBalance < currentBet)
         {
             Debug.LogWarning("Not enough balance!");
+            OnNotEnoughBalance?.Invoke();
             return;
         }
 
@@ -87,11 +90,17 @@ public class GameManager : MonoBehaviour
 
             ChangeState(GameState.Payout);
             ProcessPayout(payoutAmount);
+
         }
         else
         {
             Debug.Log("Loss. Better luck next time.");
             ChangeState(GameState.Idle); // Reset for next spin
+
+            if (currentBalance <= 0)
+            {
+                OnBankrupt?.Invoke();
+            }
         }
     }
 
@@ -114,6 +123,7 @@ public class GameManager : MonoBehaviour
     public void IncreaseBet()
     {
         if (CurrentState != GameState.Idle) return;
+        if (currentBet >= currentBalance) return;
         currentBet += 50; // Increase by 50 (or whatever you prefer)
         OnBetChanged?.Invoke(currentBet);
     }

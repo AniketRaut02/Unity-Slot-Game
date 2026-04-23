@@ -14,6 +14,11 @@ public class ReelManager : MonoBehaviour
     [Tooltip("The delay between each subsequent reel stopping.")]
     [SerializeField] private float staggerTime = 0.5f;
 
+
+    //---------EVENTS----------
+    public static event Action OnSingleReelStopped;
+
+
     private int stoppedReelsCount = 0;
 
     private void OnEnable()
@@ -74,6 +79,7 @@ public class ReelManager : MonoBehaviour
     private void HandleReelStopped()
     {
         stoppedReelsCount++;
+        OnSingleReelStopped?.Invoke();
 
         // If all reels have snapped perfectly into their final distance-based positions
         if (stoppedReelsCount >= reels.Length)
