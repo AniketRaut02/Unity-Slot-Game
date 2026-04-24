@@ -8,13 +8,13 @@ public class Reel : MonoBehaviour
     [Header("Configuration")]
     [SerializeField] private float spinSpeed = 1500f;
     [SerializeField] private float symbolHeight = 100f; // Height of one node + spacing
-    [SerializeField] private int nodeCount = 5;
+    [SerializeField] private int nodeCount = 5;         // total slot nodes in a reel
     [SerializeField] private SymbolData[] allSymbols; // For randomizing during the blur
 
     [Header("References")]
     [SerializeField] private List<SlotNode> nodes;
 
-    //------Actions---------
+    //------Events---------
     public event Action OnReelStopped;
 
     private bool isSpinning = false;

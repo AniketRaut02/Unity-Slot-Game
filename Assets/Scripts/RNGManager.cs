@@ -34,7 +34,6 @@ public class RNGManager : MonoBehaviour
 
         foreach (SymbolData symbol in availableSymbols)
         {
-            // Assuming your ScriptableObject has an integer field called 'spawnWeight'
             totalWeight += symbol.spawnWeight;
         }
     }

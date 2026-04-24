@@ -3659,7 +3659,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   rngManager: {fileID: 2070071791}
-  startingBalance: 10000
+  startingBalance: 200
   currentBet: 100
 --- !u!1 &1152653956
 GameObject:

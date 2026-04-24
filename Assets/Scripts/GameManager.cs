@@ -23,7 +23,7 @@ public class GameManager : MonoBehaviour
 
     [Header("Economy")]
     [SerializeField] private int startingBalance = 10000;
-    [SerializeField] private int currentBet = 100; // Hardcoded for now, can hook to UI later
+    [SerializeField] private int currentBet = 100; // Hardcoded for now
 
     private int currentBalance;
     private SymbolData[] currentSpinResults;
@@ -127,7 +127,7 @@ public class GameManager : MonoBehaviour
     public void IncreaseBet()
     {
         if (CurrentState != GameState.Idle) return;
-        if (currentBet >= currentBalance) return;
+        if (currentBet >= currentBalance) return;  //prevent betting more than total balance
         currentBet += 50; // Increase by 50 (or whatever you prefer)
         OnBetChanged?.Invoke(currentBet);
     }
