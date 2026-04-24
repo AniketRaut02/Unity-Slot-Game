@@ -1,6 +1,6 @@
 # 🎰 Unity 2D Slot Game Assessment
 
-🎮 **[Click Here to Play the Live WebGL Build!](https://[your-username].github.io/[your-repo-name]/)**
+🎮 **[Click Here to Play the Live WebGL Build!](https://aniketraut02.github.io/Unity-Slot-Game/)**
 
 ## 📄 Overview
 This project is a fully functional 2D slot machine developed in Unity. It was designed from the ground up with a focus on clean software architecture, mathematical fairness, and satisfying game feel. Rather than relying on rigid visual checks, the game operates on a robust, event-driven backend utilizing Finite State Machines (FSM) and a strictly decoupled UI.
